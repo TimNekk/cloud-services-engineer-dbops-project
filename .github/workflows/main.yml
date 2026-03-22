@@ -32,10 +32,4 @@ jobs:
     ### Этот шаг оставьте без изменений
     - name: Test
       run: |
-        dbopstest \
-          -test.v \
-          -host=${{ secrets.DB_HOST }} \
-          -port=${{ secrets.DB_PORT }} \
-          -user=${{ secrets.DB_USER }} \
-          -password=${{ secrets.DB_PASSWORD }} \
-          -db=${{ secrets.DB_NAME }}
+        dbopstest -test.v -host=${{ secrets.DB_HOST }} -port=${{ secrets.DB_PORT }} -user=${{ secrets.DB_USER }} -password='${{ secrets.DB_PASSWORD }}' -db=${{ secrets.DB_NAME }}
