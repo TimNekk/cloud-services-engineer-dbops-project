@@ -95,10 +95,8 @@ INSERT INTO orders
         date_created
     )
 SELECT
-    i,
-    (array['pending', 'shipped', 'cancelled'])[floor(random() * 3 + 1)]
-FROM
-    generate_series(1, 10000000) s(i),
+    i                                                                  ,
+    (array['pending', 'shipped', 'cancelled'])[floor(random() * 3 + 1)],
     DATE(NOW() - (random() * (NOW()+'90 days' - NOW())))
 FROM
     generate_series(1, 10000000) s(i);
