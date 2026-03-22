@@ -11,6 +11,15 @@ jobs:
       uses: actions/checkout@v2
 
     #### Добавьте шаг с Flyway-миграциями
+    - name: Run Flyway migrations with Docker
+      uses: docker://redgate/flyway:12.1-azure-mongo
+      with:
+        args: >-
+          migrate
+          -locations="filesystem:./migrations"
+          -url="jdbc:postgresql://${{ secrets.DB_HOST }}:${{ secrets.DB_PORT }}/${{ secrets.DB_NAME }}"
+          -user="${{ secrets.DB_USER }}"
+          -password="${{ secrets.DB_PASSWORD }}"
 
     ### Этот шаг оставьте без изменений
     - name: Download and setup autotests binaries
