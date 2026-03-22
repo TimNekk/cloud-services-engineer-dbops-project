@@ -16,7 +16,6 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO t
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON FUNCTIONS TO tester;
 ```
 
-**Без оптимизации**
 ```sql
 SELECT SUM(op.quantity) AS quantity
     ,o.date_created AS date
@@ -29,6 +28,7 @@ WHERE
 GROUP BY
     o.date_created;
 ```
+**Без индексов**
 ```
                                                                              QUERY PLAN                                                                              
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -61,5 +61,40 @@ GROUP BY
    Options: Inlining false, Optimization false, Expressions true, Deforming true
    Timing: Generation 2.140 ms, Inlining 0.000 ms, Optimization 3.137 ms, Emission 36.631 ms, Total 41.909 ms
  Execution Time: 2154.837 ms
-(29 rows)
 ```
+**С индексами**
+```
+                                                                                        QUERY PLAN                                                                                         
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize GroupAggregate  (cost=200216.05..200239.11 rows=91 width=12) (actual time=1641.100..1648.783 rows=7 loops=1)
+   Group Key: o.date_created
+   ->  Gather Merge  (cost=200216.05..200237.29 rows=182 width=12) (actual time=1641.085..1648.766 rows=21 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         ->  Sort  (cost=199216.03..199216.25 rows=91 width=12) (actual time=1614.480..1614.484 rows=7 loops=3)
+               Sort Key: o.date_created
+               Sort Method: quicksort  Memory: 25kB
+               Worker 0:  Sort Method: quicksort  Memory: 25kB
+               Worker 1:  Sort Method: quicksort  Memory: 25kB
+               ->  Partial HashAggregate  (cost=199212.16..199213.07 rows=91 width=12) (actual time=1614.452..1614.457 rows=7 loops=3)
+                     Group Key: o.date_created
+                     Batches: 1  Memory Usage: 24kB
+                     Worker 0:  Batches: 1  Memory Usage: 24kB
+                     Worker 1:  Batches: 1  Memory Usage: 24kB
+                     ->  Parallel Hash Join  (cost=77271.22..198691.65 rows=104102 width=8) (actual time=239.568..1593.888 rows=84600 loops=3)
+                           Hash Cond: (op.order_id = o.id)
+                           ->  Parallel Seq Scan on order_product op  (cost=0.00..105361.67 rows=4166667 width=12) (actual time=0.024..368.501 rows=3333333 loops=3)
+                           ->  Parallel Hash  (cost=75969.94..75969.94 rows=104102 width=12) (actual time=238.133..238.134 rows=84600 loops=3)
+                                 Buckets: 262144  Batches: 1  Memory Usage: 13984kB
+                                 ->  Parallel Bitmap Heap Scan on orders o  (cost=10192.90..75969.94 rows=104102 width=12) (actual time=28.047..208.617 rows=84600 loops=3)
+                                       Recheck Cond: ((date_created > (now() - '7 days'::interval)) AND ((status)::text = 'shipped'::text))
+                                       Heap Blocks: exact=23551
+                                       ->  Bitmap Index Scan on idx_orders_date_created_status  (cost=0.00..10130.44 rows=249845 width=0) (actual time=32.558..32.558 rows=253801 loops=1)
+                                             Index Cond: ((date_created > (now() - '7 days'::interval)) AND ((status)::text = 'shipped'::text))
+ Planning Time: 0.242 ms
+ JIT:
+   Functions: 57
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 4.183 ms, Inlining 0.000 ms, Optimization 1.117 ms, Emission 30.793 ms, Total 36.092 ms
+ Execution Time: 1649.777 ms
+ ```
