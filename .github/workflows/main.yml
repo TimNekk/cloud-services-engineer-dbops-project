@@ -14,6 +14,7 @@ jobs:
     - name: Run Flyway migrations with Docker
       uses: docker://redgate/flyway:12.1-azure-mongo
       with:
+        entrypoint: flyway
         args: >-
           migrate
           -locations="filesystem:./migrations"
