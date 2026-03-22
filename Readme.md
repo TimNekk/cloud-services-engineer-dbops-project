@@ -5,9 +5,9 @@
 CREATE DATABASE store;
 CREATE ROLE tester LOGIN PASSWORD 'BlHfck9Q&F^!np75';
 GRANT CONNECT ON DATABASE store TO tester;
-'''
+```
 
-'''sql
+```sql
 /c store
 GRANT USAGE ON SCHEMA public TO tester;
 GRANT CREATE ON SCHEMA public TO tester;
